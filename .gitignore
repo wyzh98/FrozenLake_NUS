@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# My lib
+/.idea
+agent.py
+FirstVisit_MC.py
+gridworld.txt
+racetrack_env.py
+test.py
