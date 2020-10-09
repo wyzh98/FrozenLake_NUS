@@ -7,4 +7,5 @@ def show_progress(e_now, e_all):
         print('{} episodes\t {}%'.format(e_now, percent))
 
 def show_success(episode):
+    global been
     print('Optimal policy generated after around {} episodes.'.format(episode))

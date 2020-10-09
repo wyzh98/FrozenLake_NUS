@@ -130,6 +130,7 @@ dmypy.json
 
 # My lib
 .idea/
+
 agent.py
 FirstVisit_MC.py
 gridworld.txt
