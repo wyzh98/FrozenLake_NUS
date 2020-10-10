@@ -4,13 +4,12 @@ import numpy as np
 from frozenlake_env import FrozenLake
 
 
-
 class FindPathBase:
 
-    def __init__(self):
+    def __init__(self, map_idx=1, num_episode=2000):
 
-        self.MAP          = 1 # 0 for 4x4 and 1 for 10x10
-        self.NUM_EPISODE  = 2000
+        self.MAP          = map_idx # 0 for 4x4 and 1 for 10x10
+        self.NUM_EPISODE  = num_episode
         self.GAMMA        = 0.95
         self.EPSILON      = 0.1
         self.ACTION_LIST  = [0, 1, 2, 3]
@@ -43,8 +42,8 @@ class FindPathBase:
 
 class FirstMonteCarlo(FindPathBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, num_episode=2000):
+        super().__init__(num_episode=num_episode)
 
     def gen_episode(self, policy_table:dict):
         done = False
@@ -81,13 +80,15 @@ class FirstMonteCarlo(FindPathBase):
                         policy_table[state][a] = 1 - self.EPSILON + self.EPSILON / self.NUM_ACTION
                     else:
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
+            self.env.render(len(action_list), episode, self.NUM_EPISODE, policy_table)
+        self.env.render_all(self.NUM_EPISODE, policy_table, Q_table)
         print('First-visit Monte Carlo needs more training.')
 
 
 class SARSA(FindPathBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, num_episode=2000):
+        super().__init__(num_episode=num_episode)
         self.LR = 0.1
 
     def run(self):
@@ -118,17 +119,19 @@ class SARSA(FindPathBase):
 
 class QLearning(FindPathBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, num_episode=2000):
+        super().__init__(num_episode=num_episode)
         self.LR = 0.1
 
     def run(self):
         policy_table, Q_table, _ = self.init_tables()
         for episode in range(self.NUM_EPISODE):
+            step   = 0
             done   = False
             state  = self.env.reset()
             action = np.random.choice(self.ACTION_LIST, p=policy_table[state])
             while not done:
+                step += 1
                 new_state, reward, done = self.env.step(action)
                 new_action = np.random.choice(self.ACTION_LIST, p=policy_table[new_state])
                 new_Q = max([Q_table[new_state][a] for a in self.ACTION_LIST])
@@ -141,13 +144,15 @@ class QLearning(FindPathBase):
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
                 state = new_state
                 action = new_action
+            self.env.render(step, episode, self.NUM_EPISODE, policy_table)
+        self.env.render_all(self.NUM_EPISODE, policy_table, Q_table)
         return policy_table
 
 
 if __name__ == '__main__':
-    env_MC = FirstMonteCarlo()
-    env_SARSA = SARSA()
-    env_QL = QLearning()
+    env_MC = FirstMonteCarlo(num_episode=30000)
+    env_SARSA = SARSA(num_episode=2000)
+    env_QL = QLearning(num_episode=2000)
     env_SARSA.run()
 
 

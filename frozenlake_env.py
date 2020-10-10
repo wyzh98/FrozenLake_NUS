@@ -29,8 +29,10 @@ class FrozenLake:
         self.map               = np.loadtxt(self.filepath[map_version], dtype=int)
         self.MAP_X, self.MAP_Y = self.map.shape
         self.init_states       = [(x, y) for x in range(self.MAP_X) for y in range(self.MAP_Y) if self.CELL[self.map[x, y]] == 'start']
+        self.e_fail            = []
         self.e_success         = []
-        self.e_len             = []
+        self.e_fail_len        = []
+        self.e_success_len     = []
 
     def reset(self):
         self.state = random.choice(self.init_states)
@@ -61,22 +63,23 @@ class FrozenLake:
         return self.state, reward, done
 
     def render(self, e_len, e, e_all, policy):
-        self.e_len.append(e_len)
-        self._show_progress(e)
-        if self._is_success(policy):
+        if self.CELL[self.map[self.state]] == 'frisbee':
+        # if self._is_success(policy):
             self.e_success.append(e)
+            self.e_success_len.append(e_len)
+        else:
+            self.e_fail.append(e)
+            self.e_fail_len.append(e_len)
         if e == e_all - 1:
             if self.e_success:
-                print('Optimal policy generated at episode:', self.e_success[0])
+                print('Frisbee firstly reach at episode:', self.e_success[0])
             else:
-                print('SARSA needs more training.')
+                print('More training is needed.')
 
     def render_all(self, e_all, policy, Qtable):
-        E = list(range(1, e_all + 1))
-        e_success_len = [self.e_len[i] for i in self.e_success]
         plt.figure(1)
-        plt.scatter(E, self.e_len, s=0.8, alpha=1.0)
-        plt.scatter(self.e_success, e_success_len, s=0.8, c='red', alpha=1.0)
+        plt.scatter(self.e_fail, self.e_fail_len, s=0.8, alpha=1.0)
+        plt.scatter(self.e_success, self.e_success_len, s=0.8, c='red', alpha=1.0)
         plt.show()
 
     def _is_success(self, policy_table):
