@@ -130,9 +130,6 @@ dmypy.json
 
 # My lib
 .idea/
-
-agent.py
-FirstVisit_MC.py
-gridworld.txt
+.vscode/
 racetrack_env.py
-test.py
+agent.py
