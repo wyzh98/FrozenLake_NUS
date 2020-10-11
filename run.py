@@ -7,12 +7,13 @@ from frozenlake_env import FrozenLake
 class FindPathBase:
 
     def __init__(self, map_idx=1, num_episode=2000):
-
+        self.name         = None
         self.MAP          = map_idx # 0 for 4x4 and 1 for 10x10
         self.NUM_EPISODE  = num_episode
         self.GAMMA        = 0.95
         self.EPSILON      = 0.1
         self.ACTION_LIST  = [0, 1, 2, 3]
+        self.MAX_STEP     = 200
         self.NUM_ACTION   = len(self.ACTION_LIST)
         self.env          = FrozenLake(self.MAP)
         self.MAP_X, self.MAP_Y = (4, 4) if self.MAP == 0 else (10, 10)
@@ -40,21 +41,27 @@ class FindPathBase:
         action = np.random.choice(idx_list)
         return action
 
+
 class FirstMonteCarlo(FindPathBase):
 
-    def __init__(self, num_episode=2000):
-        super().__init__(num_episode=num_episode)
+    def __init__(self, map_idx=1, num_episode=2000):
+        super().__init__(map_idx=map_idx, num_episode=num_episode)
+        self.name = 'Monte Carlo'
 
     def gen_episode(self, policy_table:dict):
+        step = 0
         done = False
         state = self.env.reset()
         state_list, action_list, reward_list, return_list = [], [], [], []
         while not done:
+            step += 1
             action = np.random.choice(self.ACTION_LIST, p=policy_table[state])
             state_list.append(state)
             action_list.append(action)
             state, reward, done= self.env.step(action)
             reward_list.append(reward)
+            if step > self.MAX_STEP:
+                break
         G = 0
         for i in range(len(state_list)-1, -1, -1):
             G = self.GAMMA * G + reward_list[i]
@@ -81,15 +88,16 @@ class FirstMonteCarlo(FindPathBase):
                     else:
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
             self.env.render(len(action_list), episode, self.NUM_EPISODE, policy_table)
-        self.env.render_all(self.NUM_EPISODE, policy_table, Q_table)
+        self.env.render_all(self.NUM_EPISODE, self.name, policy_table, Q_table)
         print('First-visit Monte Carlo needs more training.')
 
 
 class SARSA(FindPathBase):
 
-    def __init__(self, num_episode=2000):
-        super().__init__(num_episode=num_episode)
-        self.LR = 0.1
+    def __init__(self, map_idx=1, num_episode=2000):
+        super().__init__(map_idx=map_idx, num_episode=num_episode)
+        self.name = 'SARSA'
+        self.LR   = 0.1
 
     def run(self):
         policy_table, Q_table, _ = self.init_tables()
@@ -112,16 +120,19 @@ class SARSA(FindPathBase):
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
                 state = new_state
                 action = new_action
+                if step > self.MAX_STEP:
+                    break
             self.env.render(step, episode, self.NUM_EPISODE, policy_table)
-        self.env.render_all(self.NUM_EPISODE, policy_table, Q_table)
+        self.env.render_all(self.NUM_EPISODE, self.name, policy_table, Q_table)
         return policy_table
 
 
 class QLearning(FindPathBase):
 
-    def __init__(self, num_episode=2000):
-        super().__init__(num_episode=num_episode)
-        self.LR = 0.1
+    def __init__(self, map_idx=1, num_episode=2000):
+        super().__init__(map_idx=map_idx, num_episode=num_episode)
+        self.name = 'Q Learning'
+        self.LR   = 0.1
 
     def run(self):
         policy_table, Q_table, _ = self.init_tables()
@@ -144,15 +155,20 @@ class QLearning(FindPathBase):
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
                 state = new_state
                 action = new_action
+                if step > self.MAX_STEP:
+                    break
             self.env.render(step, episode, self.NUM_EPISODE, policy_table)
-        self.env.render_all(self.NUM_EPISODE, policy_table, Q_table)
+        self.env.render_all(self.NUM_EPISODE, self.name, policy_table, Q_table)
         return policy_table
 
 
 if __name__ == '__main__':
-    env_MC = FirstMonteCarlo(num_episode=30000)
-    env_SARSA = SARSA(num_episode=2000)
-    env_QL = QLearning(num_episode=2000)
+    map_idx = 1 # 0 for 4x4, 1 for 10x10
+    env_MC = FirstMonteCarlo(map_idx, num_episode=2000)
+    env_SARSA = SARSA(map_idx, num_episode=2000)
+    env_QL = QLearning(map_idx, num_episode=2000)
     env_SARSA.run()
+
+
 
 
