@@ -30,11 +30,7 @@ class FrozenLake:
         self.map               = np.loadtxt(self.filepath[map_idx], dtype=int)
         self.MAP_X, self.MAP_Y = self.map.shape
         self.init_states       = [(x, y) for x in range(self.MAP_X) for y in range(self.MAP_Y) if self.CELL[self.map[x, y]] == 'start']
-        self.e_fail            = []
-        self.e_success         = []
-        self.e_fail_len        = []
-        self.e_success_len     = []
-        self.e_opt_policy      = []
+        self.e_fail, self.e_success, self.e_opt_policy = {}, {}, []
 
     def reset(self):
         self.state = random.choice(self.init_states)
@@ -67,33 +63,30 @@ class FrozenLake:
     def render(self, e_len, e, e_all, policy):
         self._show_progress(e)
         if self.CELL[self.map[self.state]] == 'frisbee':
-            self.e_success.append(e)
-            self.e_success_len.append(e_len)
+            self.e_success[e] = e_len
         else:
-            self.e_fail.append(e)
-            self.e_fail_len.append(e_len)
+            self.e_fail[e] = e_len
         if self._is_success(policy):
             self.e_opt_policy.append(e)
         if e == e_all - 1:
             if self.e_success:
-                print('Frisbee firstly reach at episode:', self.e_success[0])
+                print('Frisbee firstly reach at episode:', list(self.e_success.values())[0])
             else:
                 print('More training is needed.')
 
     def render_all(self, e_all, name, policy_table, Qtable):
-        # plt.figure(1)
-        l1 = plt.scatter(self.e_fail, self.e_fail_len, s=0.8, alpha=0.2, label='Fail')
-        l2 = plt.scatter(self.e_success, self.e_success_len, s=0.8, c='red', alpha=1.0)
-        l3 = plt.vlines(self.e_opt_policy, 0, max(self.e_fail_len), colors='green', alpha=0.02)
-        plt.legend(handles=[l1,l2,l3], labels=['Fail','Success','Optimal policy'],loc='upper left')
+        plt.figure()
+        l1 = plt.scatter(self.e_fail.keys(), self.e_fail.values(), s=0.8, alpha=0.3, label='Fail')
+        l2 = plt.scatter(self.e_success.keys(), self.e_success.values(), s=0.8, c='red', alpha=1.0)
+        l3 = plt.vlines(self.e_opt_policy, 0, max(self.e_fail.values()), colors='green', alpha=0.05)
+        plt.legend(handles=[l1,l2,l3], labels=['Fail','Success','Optimal policy'], loc='upper right')
         plt.title('Training Process of '+ name)
         plt.xlabel('#Episode')
         plt.ylabel('Step length')
-        self.render_heatmap(policy_table, Qtable)
-        self.render_sucess_rate()
-        plt.show()
+        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\mc_4_curve.png', dpi=300) ###################################
+        self.render_heatmap(policy_table, Qtable, name)
 
-    def render_heatmap(self, policy_table, Qtable):
+    def render_heatmap(self, policy_table, Qtable, name):
         num_cell = max(Qtable.keys())[0] + 1
         Q = np.full((num_cell, num_cell), 0, dtype=float)
         mask = np.full((num_cell, num_cell), False, dtype=bool)
@@ -105,24 +98,10 @@ class FrozenLake:
                     mask[x][y] = True
                 elif self.CELL[self.map[(x, y)]] == 'frisbee':
                     mask[x][y] = True
-        plt.figure(2)
+        plt.figure()
         sns.heatmap(Q, annot=True, cmap='RdBu_r', square=True, mask=mask, linewidths=0.3, linecolor='black')
-        plt.title('Max state-action value given state')
-
-    def render_sucess_rate(self, smooth_size=20):
-        e_smooth, s = [], []
-        num_e = len(self.e_fail) + len(self.e_success)
-        for batch in range(num_e // smooth_size):
-            e_smooth.append(batch * smooth_size + smooth_size // 2)
-            cnt = 0
-            for e in range(batch*smooth_size, (batch + 1)*smooth_size):
-                if e in self.e_success:
-                    cnt += 1
-            s.append(100 * cnt / smooth_size)
-        plt.figure(3)
-        plt.plot(e_smooth, s)
-        plt.title('Success rate')
-        return e_smooth, s
+        plt.title('Max state-action value given state ({})'.format(name))
+        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\mc_4_map.png', dpi=300) ###################
 
     def _is_success(self, policy_table):
         state = self.reset()
@@ -149,7 +128,46 @@ class FrozenLake:
         if e % 10 == 0:
             print('Episode: %d' % e, end='\r')
 
-def smooth(L, smooth_size=20):
-    return [sum(x) / len(x) for x in chunked(L, smooth_size)]
+def render_learn_curve(envS, envQ, envM):
+    l     = []
+    num_e = len(envS.env.e_fail) + len(envS.env.e_success)
+    E     = list(range(num_e))
+    plt.figure()
+    for env in [envS, envQ, envM]:
+        s_all = 0
+        s     = []
+        for e in range(num_e):
+            if e in env.env.e_fail.keys():
+                s_all += env.env.e_fail[e]
+                s.append(s_all)
+            elif e in env.env.e_success.keys():
+                s_all += env.env.e_success[e]
+                s.append(s_all)
+        handle, = plt.plot(E, s)
+        l.append(handle)
+    plt.legend(handles=l, labels=[envS.name, envQ.name, envM.name])
+    plt.xlabel('#Episode')
+    plt.ylabel('Accumulative steps')
+    plt.title('Comparison of learning curve')
 
-      
+def render_success_rate(envS, envQ, envM, smooth_size=20):
+    l = []
+    num_e = len(envS.env.e_fail) + len(envS.env.e_success)
+    plt.figure()
+    for env in [envS, envQ, envM]:
+        e_smooth, s = [], []
+        for batch in range(num_e // smooth_size):
+            e_smooth.append(batch * smooth_size + smooth_size // 2)
+            cnt = 0
+            for e in range(batch*smooth_size, (batch + 1)*smooth_size):
+                if e in env.env.e_success.keys():
+                    cnt += 1
+            s.append(100 * cnt / smooth_size)
+        handle, = plt.plot(e_smooth, s)
+        l.append(handle)
+    plt.legend(handles=l, labels=[envS.name, envQ.name, envM.name])
+    plt.title('Comparison of three method with a smoothness of {} episodes'.format(smooth_size))
+    return e_smooth, s
+
+def _smooth(L, smooth_size=20):
+    return [sum(x) / len(x) for x in chunked(L, smooth_size)]

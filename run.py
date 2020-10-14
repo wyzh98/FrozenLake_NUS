@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from frozenlake_env import FrozenLake
+import matplotlib.pyplot as plt
+from frozenlake_env import FrozenLake, render_success_rate, render_learn_curve
 
 
 class FindPathBase:
@@ -89,7 +90,7 @@ class FirstMonteCarlo(FindPathBase):
                         policy_table[state][a] = self.EPSILON / self.NUM_ACTION
             self.env.render(len(action_list), episode, self.NUM_EPISODE, policy_table)
         self.env.render_all(self.NUM_EPISODE, self.name, policy_table, Q_table)
-        print('First-visit Monte Carlo needs more training.')
+        return policy_table
 
 
 class SARSA(FindPathBase):
@@ -131,7 +132,7 @@ class QLearning(FindPathBase):
 
     def __init__(self, map_idx=1, num_episode=2000):
         super().__init__(map_idx=map_idx, num_episode=num_episode)
-        self.name = 'Q Learning'
+        self.name = 'Q-learning'
         self.LR   = 0.1
 
     def run(self):
@@ -163,12 +164,15 @@ class QLearning(FindPathBase):
 
 
 if __name__ == '__main__':
-    map_idx = 1 # 0 for 4x4, 1 for 10x10
-    env_MC = FirstMonteCarlo(map_idx, num_episode=2000)
-    env_SARSA = SARSA(map_idx, num_episode=2000)
-    env_QL = QLearning(map_idx, num_episode=2000)
+    map_idx     = 1 # 0 for 4x4, 1 for 10x10
+    n           = 3000
+    env_MC      = FirstMonteCarlo(map_idx, num_episode=n)
+    env_SARSA   = SARSA(map_idx, num_episode=n)
+    env_QL      = QLearning(map_idx, num_episode=n)
     env_SARSA.run()
-
-
-
+    env_QL.run()
+    env_MC.run()
+    render_success_rate(envS=env_SARSA, envQ=env_QL, envM=env_MC, smooth_size=20)
+    render_learn_curve(envS=env_SARSA, envQ=env_QL, envM=env_MC)
+    plt.show()
 
