@@ -4,7 +4,6 @@ import random
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from more_itertools import chunked
 
 
 class FrozenLake:
@@ -42,6 +41,7 @@ class FrozenLake:
         dx, dy  = self.ACTIONS[action]
         new_state = self.state[0] + dx, self.state[1] + dy
 
+        reward -= 0
         if not (0 <= new_state[0] < self.MAP_X and 0 <= new_state[1] < self.MAP_Y):
             reward -= 0
         elif self.CELL[self.map[new_state]] in ['ice', 'start']:
@@ -70,9 +70,11 @@ class FrozenLake:
             self.e_opt_policy.append(e)
         if e == e_all - 1:
             if self.e_success:
-                print('Frisbee firstly reach at episode:', list(self.e_success.values())[0])
+                print('Frisbee firstly reach at episode:', list(self.e_success.keys())[0])
             else:
                 print('More training is needed.')
+            if e in self.e_success:
+                self.render_policy(policy)
 
     def render_all(self, e_all, name, policy_table, Qtable):
         plt.figure()
@@ -83,7 +85,7 @@ class FrozenLake:
         plt.title('Training Process of '+ name)
         plt.xlabel('#Episode')
         plt.ylabel('Step length')
-        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\mc_4_curve.png', dpi=300) ###################################
+        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\q_10_curve.png', dpi=300) ###################################
         self.render_heatmap(policy_table, Qtable, name)
 
     def render_heatmap(self, policy_table, Qtable, name):
@@ -99,9 +101,22 @@ class FrozenLake:
                 elif self.CELL[self.map[(x, y)]] == 'frisbee':
                     mask[x][y] = True
         plt.figure()
-        sns.heatmap(Q, annot=True, cmap='RdBu_r', square=True, mask=mask, linewidths=0.3, linecolor='black')
+        sns.heatmap(Q, annot=True, cmap='RdBu_r', square=True, mask=mask, linewidths=0.3, linecolor='black', annot_kws={'size': 5})
+        # sns.heatmap(Q, cmap='RdBu_r', square=True, mask=mask, linewidths=0.3, linecolor='black')
         plt.title('Max state-action value given state ({})'.format(name))
-        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\mc_4_map.png', dpi=300) ###################
+        # plt.savefig(r'C:\Users\wyzh98\OneDrive - National University of Singapore\Notes\ME5406 DL\Project1\{}.png'.format(name), dpi=300) ###################
+
+    def render_policy(self, policy_table):
+        done = False
+        self.state = self.reset()
+        state_list, action_list = [self.state], []
+        while not done:
+            action = int(np.argmax(policy_table[self.state]))
+            _, _, done = self.step(action)
+            state_list.append(self.state)
+            action_list.append(action)
+        print('Policy (state): {}'.format(state_list))
+        print('Policy (action): {}'.format(action_list))
 
     def _is_success(self, policy_table):
         state = self.reset()
@@ -168,6 +183,3 @@ def render_success_rate(envS, envQ, envM, smooth_size=20):
     plt.legend(handles=l, labels=[envS.name, envQ.name, envM.name])
     plt.title('Comparison of three method with a smoothness of {} episodes'.format(smooth_size))
     return e_smooth, s
-
-def _smooth(L, smooth_size=20):
-    return [sum(x) / len(x) for x in chunked(L, smooth_size)]

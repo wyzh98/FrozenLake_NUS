@@ -14,7 +14,7 @@ class FindPathBase:
         self.GAMMA        = 0.95
         self.EPSILON      = 0.1
         self.ACTION_LIST  = [0, 1, 2, 3]
-        self.MAX_STEP     = 200
+        self.MAX_STEP     = np.inf
         self.NUM_ACTION   = len(self.ACTION_LIST)
         self.env          = FrozenLake(self.MAP)
         self.MAP_X, self.MAP_Y = (4, 4) if self.MAP == 0 else (10, 10)
@@ -103,6 +103,8 @@ class SARSA(FindPathBase):
     def run(self):
         policy_table, Q_table, _ = self.init_tables()
         for episode in range(self.NUM_EPISODE):
+            # self.EPSILON = 0.05 + 0.95/(0.1*episode+1)
+            self.LR = 0.05 + 0.95/(episode+1)
             step   = 0
             done   = False
             state  = self.env.reset()
@@ -165,7 +167,7 @@ class QLearning(FindPathBase):
 
 if __name__ == '__main__':
     map_idx     = 1 # 0 for 4x4, 1 for 10x10
-    n           = 3000
+    n           = 2000
     env_MC      = FirstMonteCarlo(map_idx, num_episode=n)
     env_SARSA   = SARSA(map_idx, num_episode=n)
     env_QL      = QLearning(map_idx, num_episode=n)
@@ -174,5 +176,7 @@ if __name__ == '__main__':
     env_MC.run()
     render_success_rate(envS=env_SARSA, envQ=env_QL, envM=env_MC, smooth_size=20)
     render_learn_curve(envS=env_SARSA, envQ=env_QL, envM=env_MC)
+    # print('avg step', (sum(env_SARSA.env.e_success.values())+sum(env_SARSA.env.e_fail.values()))/2000)
+    # print('max step:', max(max(env_SARSA.env.e_success.values()), max(env_SARSA.env.e_fail.values())))
     plt.show()
 
