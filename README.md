@@ -46,10 +46,10 @@ Project 1 #ME5406 Deep Learning for Robotics# @NUS
 | Maximum step length | 2080.7          | 135.6        |
 | Time spent          | 4.32s           | 1.52s        |
 
-![Learning curve](\fig\lc_10.png)
+![Learning curve](https://github.com/wyzh98/FrozenLake_NUS/blob/master/fig/lc_10.png)
 
-![Success rate](\fig\sr_10.png)
+![Success rate](https://github.com/wyzh98/FrozenLake_NUS/blob/master/fig/sr_10.png)
 
-![Training curve](\fig\sar_10_curve.png)
+![Training curve](https://github.com/wyzh98/FrozenLake_NUS/blob/master/fig/sar_10_curve.png)
 
-![Extracted policy and heat map](\fig\p_sar.jpg)
+![Extracted policy and heat map](https://github.com/wyzh98/FrozenLake_NUS/blob/master/fig/p_sar.jpg)
