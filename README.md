@@ -1,5 +1,7 @@
 # The Froze Lake Problem and Variations
-Project 1 #ME5406 Deep Learning for Robotics# @NUS
+Project 1 of **#ME5406 Deep Learning for Robotics#** @NUS @MIT License
+
+For more information, check the [report](https://github.com/wyzh98/FrozenLake_NUS/blob/master/Report.pdf).
 
 - MC 4x4
 
